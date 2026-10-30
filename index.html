@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ly MD Beauty • Quản lý thẩm mỹ</title>
+<style>
+:root{--bg:#f8f5f1;--panel:#fff;--ink:#342e2c;--muted:#857b77;--gold:#ae825f;--line:#ece5de;--red:#c24c50;--green:#238267}
+*{box-sizing:border-box}
+body{margin:0;font:14px system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select{font:inherit}
+button{cursor:pointer;border:0;border-radius:9px;padding:10px 15px;background:var(--gold);color:#fff;font-weight:600}
+button.secondary{background:#f0e8e0;color:#5c4638}
+button.danger{background:#fceaea;color:var(--red)}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select{padding:10px 12px;border:1px solid #dfd7d0;border-radius:9px;background:#fff;max-width:100%;width:100%}
+
+.login{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 20% 10%,#f2e1d0,transparent 40%),var(--bg)}
+.loginbox{width:min(420px,100%);background:white;padding:34px;border-radius:20px;box-shadow:0 15px 60px #6b4a3017}
+.brand{font-family:Georgia,serif;font-size:30px;color:#8f654c}
+.sub{color:var(--muted);margin:8px 0 24px}
+.field{display:grid;gap:6px;margin:12px 0}
+.hint{font-size:12px;color:var(--muted);line-height:1.6}
+
+.shell{display:flex;min-height:100vh}
+.sidebar{width:244px;background:#322c2a;color:#f7f1eb;padding:24px 13px;flex-shrink:0;transition:width 0.3s ease;position:relative}
+.sidebar.collapsed{width:70px !important;padding:24px 8px !important}
+.sidebar.collapsed .brand-text, .sidebar.collapsed .nav-text{display:none !important}
+.sidebar.collapsed .nav{text-align:center;padding:12px 6px;justify-content:center}
+.brand-container{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px;gap:5px}
+.sidebar.collapsed .brand-container{justify-content:center}
+.collapse-btn{background:#4a3d38;color:#fff;border:none;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:11px;flex-shrink:0}
+.collapse-btn:hover{background:#6b5850}
+
+.nav{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;color:#e9ded5;margin:3px 0;padding:12px;white-space:nowrap;overflow:hidden}
+.nav.active,.nav:hover{background:#594b43}
+
+.main{flex:1;min-width:0;padding:28px;max-width:1600px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:25px}
+h1{font-size:25px;margin:0}h2{font-size:18px;margin:0 0 15px}h3{font-size:15px;margin:0 0 12px}
+.muted{color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.card,.box{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:20px}
+.card b{display:block;font-size:24px;margin-top:12px}
+.two{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-top:16px}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 15px}
+.tablewrap{overflow:auto}
+table{border-collapse:collapse;width:100%;min-width:650px}
+th,td{padding:12px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:#8a7768;font-weight:600;background:#fcfaf8}
+td button{padding:7px 10px;margin:2px}
+.tag{display:inline-block;background:#f5e9dd;color:#916545;border-radius:99px;padding:5px 9px;font-size:12px}
+.bad{color:var(--red);font-weight:700}.good{color:var(--green);font-weight:700}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.formgrid .field{margin:0}.full{grid-column:1/-1}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.overlay{position:fixed;inset:0;background:#221a17a6;display:grid;place-items:center;padding:16px;z-index:10}
+.modal{background:white;width:min(620px,100%);max-height:92vh;overflow:auto;border-radius:16px;padding:24px}
+.modal header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.modal header button{background:#f2ece7;color:#45352d}
+.empty{text-align:center;padding:35px;color:var(--muted)}
+.pill{border:1px solid var(--line);border-radius:10px;padding:10px}
+.line{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:9px 0}
+.small{font-size:12px}.hide{display:none!important}
+
+@media(max-width:1050px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}
+@media(max-width:750px){
+  .shell{display:block}
+  .sidebar{width:100% !important;padding:12px;display:flex;overflow:auto;gap:4px;align-items:center}
+  .brand-container{margin-bottom:0}
+  .nav{width:auto;margin:0}
+  .main{padding:16px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .formgrid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modalRoot"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+'use strict';
+// ===== DÁN THÔNG TIN SUPABASE VÀO 2 DÒNG DƯỚI (Project Settings > API) =====
+const SUPABASE_URL='https://majsjonjelplqfqguuiw.supabase.co', SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hanNqb25qZWxwbHFmcWd1dWl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNzAxNjQsImV4cCI6MjEwODg0NjE2NH0.bW6ojSumbFBDnKJ8MGMTWlqhFFTm6rIOaymXnXlQJ50';
+// =========================================================================
+const KEY='ly_md_beauty_v1', SESSION='ly_md_beauty_session';
+const initial=()=>({
+  users:[
+    {id:1,name:'Chủ Spa',username:'admin',password:'123456',role:'owner',active:true},
+    {id:2,name:'Quản lý',username:'quanly',password:'123456',role:'manager',active:true},
+    {id:3,name:'Nhân viên',username:'nhanvien',password:'123456',role:'staff',active:true},
+    {id:4,name:'Thu ngân',username:'thungan',password:'123456',role:'cashier',active:true}
+  ],
+  services:[
+    {id:1,name:'Chăm sóc da cơ bản',price:300000,cost:70000},
+    {id:2,name:'Điều trị mụn',price:500000,cost:120000},
+    {id:3,name:'Phun môi',price:2000000,cost:350000},
+    {id:4,name:'Triệt lông',price:400000,cost:50000}
+  ],
+  products:[
+    {id:1,name:'Serum dưỡng da',sku:'SR001',unit:'chai',stock:30,min:5,cost:150000,price:280000},
+    {id:2,name:'Kem dưỡng ẩm',sku:'KD002',unit:'hộp',stock:18,min:5,cost:110000,price:220000},
+    {id:3,name:'Mặt nạ dưỡng da',sku:'MN003',unit:'miếng',stock:45,min:10,cost:18000,price:40000}
+  ],
+  customers:[
+    {id:1,name:'Nguyễn Thị Lan',phone:'0900000001',note:'Khách quen'},
+    {id:2,name:'Trần Thị Mai',phone:'0900000002',note:''}
+  ],
+  sales:[],stockMoves:[],expenses:[],nextId:100,
+  permissions:{
+    manager:['dashboard','customers','sales','calendar','stock','products_services','finance','reports'],
+    staff:['calendar','customers','products_services'],
+    cashier:['customers','sales','stock','products_services']
+  }
+});
+
+const COLS=['services','products','customers','sales','stockMoves','expenses','appointments'];
+const emptyDb=()=>({services:[],products:[],customers:[],sales:[],stockMoves:[],expenses:[],appointments:[],calendarConfig:{morning:'08:00',afternoon:'13:00',max:4}});
+let db=emptyDb(), sb=null, snap={}, chan=null, pushQ=Promise.resolve(), rt=null;
+let user=null, view='dashboard', cart=[], saleType='product', sidebarCollapsed=false, customerFilterKeyword='';
+
+const $=s=>document.querySelector(s),
+      money=n=>Number(n||0).toLocaleString('vi-VN')+' đ',
+      esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),
+      date=x=>new Date(x).toLocaleString('vi-VN'),
+      today=()=>new Date().toISOString(),
+      roleName={owner:'Admin',staff:'Nhân viên'};
+
+const menuItems = {
+  dashboard: { icon: '📊', label: 'Tổng quan' },
+  customers: { icon: '👥', label: 'Khách hàng' },
+  sales: { icon: '🛍️', label: 'Bán hàng' },
+  calendar: { icon: '📅', label: 'Lịch hẹn & liệu trình' },
+  stock: { icon: '📦', label: 'Nhập / xuất kho' },
+  products_services: { icon: '🧴', label: 'Sản phẩm & Dịch vụ' },
+  finance: { icon: '💰', label: 'Thu chi' },
+  reports: { icon: '📈', label: 'Báo cáo' },
+  backup: { icon: '💾', label: 'Sao lưu dữ liệu' }
+};
+
+const tabs = {};
+Object.keys(menuItems).forEach(k => { tabs[k] = menuItems[k].label; });
+
+function allowed(k){
+  if(!user)return false;
+  if(user.role==='owner')return true;
+  return ['calendar','customers','products_services'].includes(k);
+}
+
+function id(){return Date.now()*1000+Math.floor(Math.random()*1000)}
+function sj(v){return JSON.stringify(v,(k,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.keys(x).sort().reduce((o,n)=>(o[n]=x[n],o),{}):x)}
+function save(){
+  const now={},ups=[],dels={};
+  COLS.forEach(c=>(db[c]||[]).forEach(x=>{const k=c+':'+x.id,j=sj(x);now[k]=j;if(snap[k]!==j)ups.push({collection:c,id:x.id,data:x})}));
+  const cj=sj(db.calendarConfig);now['config:1']=cj;
+  if(snap['config:1']!==cj)ups.push({collection:'config',id:1,data:db.calendarConfig});
+  Object.keys(snap).forEach(k=>{if(!(k in now)){const [c,i]=k.split(':');(dels[c]=dels[c]||[]).push(Number(i))}});
+  snap=now;
+  if(!ups.length&&!Object.keys(dels).length)return;
+  pushQ=pushQ.then(async()=>{
+    if(ups.length){const r=await sb.from('records').upsert(ups);if(r.error)throw r.error}
+    for(const c in dels){const r=await sb.from('records').delete().eq('collection',c).in('id',dels[c]);if(r.error)throw r.error}
+  }).catch(e=>alert('Lỗi đồng bộ: '+(e.message||e)+'\nHãy tải lại trang (F5) để lấy dữ liệu mới nhất.'));
+}
+async function loadAll(){
+  db=emptyDb();snap={};let from=0,rows=[];
+  for(;;){
+    const {data,error}=await sb.from('records').select('collection,id,data').order('collection').order('id').range(from,from+999);
+    if(error)throw error;rows=rows.concat(data);if(data.length<1000)break;from+=1000;
+  }
+  rows.forEach(r=>{
+    if(r.collection==='config')db.calendarConfig=r.data;else if(COLS.includes(r.collection))db[r.collection].push(r.data);
+    snap[r.collection+':'+r.id]=sj(r.data);
+  });
+}
+function subscribe(){
+  if(chan)sb.removeChannel(chan);
+  chan=sb.channel('records-sync').on('postgres_changes',{event:'*',schema:'public',table:'records'},applyRemote).subscribe();
+}
+function applyRemote(p){
+  const r=p.eventType==='DELETE'?p.old:p.new,c=r.collection,i=Number(r.id),k=c+':'+i;
+  if(p.eventType==='DELETE'){
+    if(!(k in snap))return;delete snap[k];
+    if(COLS.includes(c))db[c]=db[c].filter(x=>x.id!==i);
+  }else{
+    if(snap[k]===sj(r.data))return;snap[k]=sj(r.data);
+    if(c==='config')db.calendarConfig=r.data;
+    else if(COLS.includes(c)){const a=db[c],ix=a.findIndex(x=>x.id===i);if(ix>=0)a[ix]=r.data;else a.push(r.data)}
+  }
+  softRender();
+}
+function softRender(){
+  clearTimeout(rt);
+  rt=setTimeout(()=>{
+    const ae=document.activeElement,busy=document.querySelector('#modalRoot .modal')||/INPUT|SELECT|TEXTAREA/.test(ae&&ae.tagName||'')||($('#calEditor')&&$('#calEditor').innerHTML.trim());
+    if(user&&!busy)render();
+  },400);
+}
+async function enter(u){
+  try{
+    const {data:p,error}=await sb.from('profiles').select('name,role').eq('id',u.id).maybeSingle();
+    if(error)throw error;
+    if(!p||!p.role){await sb.auth.signOut();user=null;render();alert('Tài khoản chưa được cấp quyền. Hãy liên hệ admin.');return}
+    user={id:u.id,name:p.name||u.email,role:p.role==='admin'?'owner':'staff'};
+    await loadAll();subscribe();
+    view=allowed('dashboard')?'dashboard':Object.keys(menuItems).find(allowed);
+    render();
+  }catch(e){user=null;render();alert('Không tải được dữ liệu: '+(e.message||e))}
+}
+async function login(){
+  const {data,error}=await sb.auth.signInWithPassword({email:$('#username').value.trim(),password:$('#password').value});
+  if(error){alert(/invalid login credentials/i.test(error.message)?'Sai email hoặc mật khẩu':'Lỗi đăng nhập: '+error.message);return}
+  await enter(data.user);
+}
+async function logout(){
+  if(chan){sb.removeChannel(chan);chan=null}
+  await sb.auth.signOut();user=null;db=emptyDb();snap={};render();
+}
+
+function render(){
+  if(!user){
+    $('#app').innerHTML=`
+      <div class="login">
+        <div class="loginbox">
+          <div class="brand" style="white-space:nowrap; font-size:24px;">✦ Ly MD Beauty</div>
+          <h2>Đăng nhập quản lý</h2>
+          <p class="sub">Spa • Thẩm mỹ • Mỹ phẩm</p>
+          <div class="field"><label>Email</label><input id="username" type="email" autocomplete="username"></div>
+          <div class="field"><label>Mật khẩu</label><input id="password" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></div>
+          <button style="width:100%;margin:12px 0" onclick="login()">Đăng nhập</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if(!allowed(view)) view=Object.keys(menuItems).find(allowed);
+  const currentMenu = menuItems[view] || { icon: '📊', label: 'Tổng quan' };
+
+  $('#app').innerHTML=`
+    <div class="shell">
+      <aside class="sidebar ${sidebarCollapsed ? 'collapsed' : ''}">
+        <div class="brand-container">
+          <div class="brand" style="font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin:0; color:#f1d4b7; display:flex; align-items:center;">
+            <span class="brand-text">✦ Ly MD Beauty</span>
+            <span style="display:${sidebarCollapsed?'inline':'none'}">✦</span>
+          </div>
+          <button class="collapse-btn" onclick="sidebarCollapsed = !sidebarCollapsed; render();" title="Thu gọn / Mở rộng menu">
+            ${sidebarCollapsed ? '▶' : '◀'}
+          </button>
+        </div>
+        ${Object.entries(menuItems).filter(([k])=>allowed(k)).map(([k, item])=>`
+          <button class="nav ${view===k?'active':''}" onclick="go('${k}')" title="${item.label}">
+            <span style="font-size:16px; flex-shrink:0;">${item.icon}</span>
+            <span class="nav-text" style="${sidebarCollapsed?'display:none;':''}">${item.label}</span>
+          </button>
+        `).join('')}
+      </aside>
+      <main class="main">
+        <div class="top">
+          <div>
+            <h1>${esc(currentMenu.label)}</h1>
+            <div class="muted small">Hệ thống quản lý Spa • Đồng bộ trực tuyến</div>
+          </div>
+          <div>
+            <span class="tag">${esc(user.name)} · ${roleName[user.role]}</span> 
+            <button class="secondary" onclick="logout()">Đăng xuất</button>
+          </div>
+        </div>
+        <section id="content"></section>
+      </main>
+    </div>`;
+
+  const pageRouter = {
+    dashboard: dashboard,
+    customers: customers,
+    sales: sales,
+    calendar: calendarPage,
+    stock: stock,
+    products_services: productsAndServicesPage,
+    finance: finance,
+    reports: reports,
+    users: users,
+    backup: backup
+  };
+  (pageRouter[view] || dashboard)();
+}
+
+function go(k){if(!allowed(k))return;view=k;cart=[];render()}
+function table(head,rows){return `<div class="tablewrap"><table><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td colspan="${head.length}" class="empty">Chưa có dữ liệu</td></tr>`}</tbody></table></div>`}
+
+function summary(){
+  const revenue=db.sales.reduce((s,x)=>s+x.total,0),cogs=db.sales.reduce((s,x)=>s+x.cost,0),exp=db.expenses.filter(x=>x.type==='expense').reduce((s,x)=>s+x.amount,0);
+  return {revenue,cogs,exp,profit:revenue-cogs-exp,low:db.products.filter(x=>x.stock<=x.min).length}
+}
+
+function dashboard(){
+  let a=summary();
+  $('#content').innerHTML=`
+    <div class="grid">
+      <div class="card"><span class="muted">Doanh thu bán hàng & dịch vụ</span><b>${money(a.revenue)}</b></div>
+      <div class="card"><span class="muted">Chi phí vận hành</span><b>${money(a.exp)}</b></div>
+      <div class="card"><span class="muted">Lãi ước tính*</span><b class="good">${money(a.profit)}</b></div>
+      <div class="card"><span class="muted">Sản phẩm tồn thấp</span><b class="${a.low?'bad':''}">${a.low}</b></div>
+    </div>
+    <div class="two">
+      <div class="box">
+        <h2>Giao dịch gần đây</h2>
+        ${table(['Ngày','Khách hàng','Tổng tiền'],db.sales.slice(-7).reverse().map(s=>`<tr><td>${date(s.at)}</td><td>${esc(s.customer)}</td><td>${money(s.total)}</td></tr>`))}
+      </div>
+      <div class="box">
+        <h2>Cảnh báo tồn kho</h2>
+        ${db.products.filter(x=>x.stock<=x.min).map(x=>`<div class="line"><span>${esc(x.name)}</span><b class="bad">Còn ${x.stock} ${esc(x.unit)}</b></div>`).join('')||'<p class="muted">Không có sản phẩm tồn thấp.</p>'}
+      </div>
+    </div>`;
+}
+
+function productsAndServicesPage() {
+  $('#content').innerHTML = `
+    <div class="box" style="margin-bottom:20px;">
+      <div class="toolbar">
+        <h2>Danh sách Dịch vụ</h2>
+        ${['owner','manager'].includes(user.role)?'<button onclick="editService()">+ Thêm dịch vụ</button>':''}
+      </div>
+      ${table(['Tên dịch vụ','Giá bán','Chi phí dự tính','Thao tác'], db.services.map(x=>`<tr><td>${esc(x.name)}</td><td>${money(x.price)}</td><td>${money(x.cost)}</td><td>${['owner','manager'].includes(user.role)?`<button class="secondary" onclick="editService(${x.id})">Sửa</button>`:'—'}</td></tr>`))}
+    </div>
+    <div class="box">
+      <div class="toolbar">
+        <h2>Danh sách Sản phẩm / Mỹ phẩm</h2>
+        ${['owner','manager'].includes(user.role)?'<button onclick="editProduct()">+ Thêm sản phẩm</button>':''}
+      </div>
+      ${table(['Mã','Sản phẩm','Giá nhập','Giá bán','Tồn','Thao tác'], db.products.map(x=>`<tr><td>${esc(x.sku)}</td><td>${esc(x.name)}</td><td>${user.role==='cashier'?'Ẩn':money(x.cost)}</td><td>${money(x.price)}</td><td class="${x.stock<=x.min?'bad':''}">${x.stock} ${esc(x.unit)}</td><td>${['owner','manager'].includes(user.role)?`<button class="secondary" onclick="editProduct(${x.id})">Sửa</button>`:'—'}</td></tr>`))}
+    </div>`;
+}
+
+function modal(title,body,submit){
+  $('#modalRoot').innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal"><header><h2>${title}</h2><button onclick="closeModal()">✕</button></header><form id="modalForm">${body}<div class="actions"><button type="submit">${submit||'Lưu'}</button><button type="button" class="secondary" onclick="closeModal()">Hủy</button></div></form></div></div>`
+}
+function closeModal(){$('#modalRoot').innerHTML=''}
+function f(label,name,value='',type='text',extra=''){return `<div class="field"><label>${label}</label><input name="${name}" type="${type}" value="${esc(value)}" ${extra} required></div>`}
+function val(form,name){return form.elements.namedItem(name).value}
+function num(form,name){return Number(val(form,name))}
+function submitModal(fn){
+  $('#modalForm').onsubmit=e=>{
+    e.preventDefault();
+    try{fn(e.target);save();closeModal();render()}catch(err){alert(err.message)}
+  }
+}
+
+function editService(i){
+  if(!['owner','manager'].includes(user.role))return;
+  const x=db.services.find(z=>z.id===i)||{name:'',price:0,cost:0};
+  modal(i?'Sửa dịch vụ':'Thêm dịch vụ',`<div class="formgrid">${f('Tên dịch vụ','name',x.name)}${f('Giá bán (đ)','price',x.price,'number','min="0"')}${f('Chi phí dự tính (đ)','cost',x.cost,'number','min="0"')}</div>`);
+  submitModal(t=>{const v={name:val(t,'name'),price:num(t,'price'),cost:num(t,'cost')};if(i)Object.assign(x,v);else db.services.push({id:id(),...v})});
+}
+
+function editProduct(i){
+  if(!['owner','manager'].includes(user.role))return;
+  const x=db.products.find(z=>z.id===i)||{sku:'',name:'',unit:'cái',stock:0,min:5,cost:0,price:0};
+  modal(i?'Sửa sản phẩm':'Thêm sản phẩm',`<div class="formgrid">${f('Mã sản phẩm','sku',x.sku)}${f('Tên sản phẩm','name',x.name)}${f('Đơn vị','unit',x.unit)}${f('Tồn đầu kỳ','stock',x.stock,'number','min="0"')}${f('Cảnh báo dưới số lượng','min',x.min,'number','min="0"')}${f('Giá nhập','cost',x.cost,'number','min="0"')}${f('Giá bán','price',x.price,'number','min="0"')}</div>`);
+  submitModal(t=>{const v={sku:val(t,'sku'),name:val(t,'name'),unit:val(t,'unit'),stock:num(t,'stock'),min:num(t,'min'),cost:num(t,'cost'),price:num(t,'price')};if(db.products.some(p=>p.sku===v.sku&&p.id!==i))throw Error('Mã sản phẩm đã tồn tại');if(i)Object.assign(x,v);else db.products.push({id:id(),...v})});
+}
+
+function customers(){
+  const keyword = (customerFilterKeyword || '').toLowerCase().trim();
+  const filteredList = db.customers.filter(x => {
+    if (!keyword) return true;
+    return (x.name || '').toLowerCase().includes(keyword) || (x.phone || '').includes(keyword);
+  });
+
+  const rows = filteredList.map(x => {
+    const visits = db.sales.filter(s => 
+      s.customer && s.customer.toLowerCase().trim() === x.name.toLowerCase().trim()
+    ).length;
+
+    const visitBadge = visits > 0 
+      ? `<span class="tag" style="background:#e4f4e9; color:#238267; font-weight:bold;">${visits} lần ghé</span>`
+      : `<span class="tag" style="background:#f5f5f5; color:#888;">0 lần</span>`;
+
+    return `<tr style="cursor:pointer;" ondblclick="editCustomer(${x.id})" title="Nhấp đúp để xem chi tiết & chỉnh sửa">
+      <td><b>${esc(x.name)}</b></td>
+      <td>${esc(x.phone || '—')}</td>
+      <td>${esc(x.note || '—')}</td>
+      <td>${visitBadge}</td>
+    </tr>`;
+  });
+
+  $('#content').innerHTML = `
+    <div class="box">
+      <div class="toolbar" style="gap:15px;">
+        <h2>Danh sách Khách hàng</h2>
+        <div style="display:flex; gap:10px; flex:1; max-width:400px;">
+          <input id="customerSearchInput" placeholder="🔍 Tìm theo tên hoặc SĐT khách..." value="${esc(customerFilterKeyword)}" oninput="customerFilterKeyword=this.value; customers()">
+        </div>
+        <button onclick="editCustomer()">+ Thêm khách hàng</button>
+      </div>
+      <p class="hint" style="margin-top:-5px; margin-bottom:12px;">💡 <b>Mẹo:</b> Nhấp đúp vào dòng khách hàng bất kỳ để xem lịch sử mua hàng / chốt liệu trình và chỉnh sửa thông tin.</p>
+      ${table(['Họ tên', 'Điện thoại', 'Ghi chú', 'Số lần ghé / chốt đơn'], rows)}
+    </div>`;
+}
+
+function editCustomer(i){
+  const x = db.customers.find(z => z.id === i) || { name: '', phone: '', note: '' };
+  let customerSales = [];
+  if (x.name) {
+    customerSales = db.sales.filter(s => 
+      (s.customer && s.customer.toLowerCase().trim() === x.name.toLowerCase().trim())
+    );
+  }
+
+  let historyHtml = '<div style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">';
+  historyHtml += '<h3 style="margin-bottom:10px; color:var(--gold);">📜 Lịch sử chốt đơn / mua hàng</h3>';
+  
+  if (customerSales.length === 0) {
+    historyHtml += '<p class="muted small">Khách hàng chưa có lịch sử hóa đơn nào.</p>';
+  } else {
+    historyHtml += '<div style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">';
+    customerSales.forEach((s, idx) => {
+      historyHtml += `
+        <div style="background: #faf6f0; border: 1px solid #eee; border-radius: 8px; padding: 10px;">
+          <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
+            <span>Lần ${idx + 1}: Mã HD${s.id}</span>
+            <span class="small muted">${date(s.at)}</span>
+          </div>
+          <ul style="margin: 0; padding-left: 18px; font-size: 13px;">
+            ${(s.items || []).map(it => `
+              <li><b>${esc(it.name)}</b> x ${it.qty} — <span style="color:var(--gold);">${money(it.price * it.qty)}</span> (${it.type === 'product' ? 'Mỹ phẩm' : 'Dịch vụ'})</li>
+            `).join('')}
+          </ul>
+          <div style="text-align:right; font-weight:bold; margin-top:5px; font-size:13px;">
+            Tổng tiền: ${money(s.total)}
+          </div>
+        </div>
+      `;
+    });
+    historyHtml += '</div>';
+  }
+  historyHtml += '</div>';
+
+  modal(i ? 'Thông tin & Lịch sử Khách hàng' : 'Thêm khách hàng', `
+    <div class="field"><label>Họ tên</label><input name="name" value="${esc(x.name)}" required></div>
+    <div class="field"><label>Số điện thoại</label><input name="phone" value="${esc(x.phone)}"></div>
+    <div class="field"><label>Ghi chú</label><input name="note" value="${esc(x.note)}"></div>
+    ${i ? historyHtml : ''}
+  `);
+
+  submitModal(t => {
+    const v = { name: val(t, 'name'), phone: val(t, 'phone'), note: val(t, 'note') };
+    if (i) Object.assign(x, v);
+    else db.customers.push({ id: id(), ...v });
+  });
+}
+
+function sales(){
+  if (!['product', 'service'].includes(saleType)) saleType = 'product';
+  const currentItems = saleType === 'product' ? db.products : db.services;
+
+  $('#content').innerHTML = `
+    <div class="two" style="margin-top:0">
+      <div class="box">
+        <h2>Tạo hóa đơn</h2>
+        
+        <div class="field">
+          <label>Khách hàng (Có thể chọn hoặc gõ tên mới)</label>
+          <input id="saleCustomer" list="customerList" placeholder="Nhập hoặc chọn tên khách hàng..." value="Khách lẻ">
+          <datalist id="customerList">
+            <option value="Khách lẻ">
+            ${db.customers.map(x=>`<option value="${esc(x.name)}">`).join('')}
+          </datalist>
+        </div>
+
+        <div class="field">
+          <label>Loại mặt hàng muốn thêm</label>
+          <div style="display:flex; gap:10px; margin-top:5px;">
+            <button type="button" style="flex:1; ${saleType==='product'?'':'background:#f0e8e0; color:#5c4638;'}" onclick="saleType='product'; sales()">🛍️ Mỹ phẩm</button>
+            <button type="button" style="flex:1; ${saleType==='service'?'':'background:#f0e8e0; color:#5c4638;'}" onclick="saleType='service'; sales()">💆 Dịch vụ / Liệu trình</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Chọn ${saleType==='product'?'mỹ phẩm':'dịch vụ'} từ danh mục</label>
+          <select id="saleItem" onchange="if(this.value){ $('#saleCustomName').value=''; }">
+            ${currentItems.map(x=>`<option value="${x.id}">${esc(x.name)} — ${money(x.price)} ${x.stock!==undefined?'(tồn '+x.stock+')':''}</option>`).join('')}
+          </select>
+        </div>
+
+        <div style="border: 1px dashed var(--gold); padding: 10px; border-radius: 9px; margin: 10px 0; background: #faf6f0;">
+          <span class="small" style="font-weight: 600; color: var(--gold);">Hoặc nhập tay mặt hàng ngoài danh mục:</span>
+          <div class="field" style="margin-top:6px;"><label style="font-size:12px;">Tên mặt hàng nhập tay</label><input id="saleCustomName" placeholder="VD: Thuốc bôi phụ trợ..." oninput="if(this.value){$('#saleItem').value=''}"></div>
+          <div class="field" style="margin-top:6px;"><label style="font-size:12px;">Đơn giá (đ)</label><input id="saleCustomPrice" type="number" min="0" value="0"></div>
+        </div>
+
+        <div class="field">
+          <label>Số lượng</label>
+          <input id="saleQty" type="number" min="1" value="1">
+        </div>
+        <button onclick="addCart()">+ Thêm vào hóa đơn</button>
+      </div>
+
+      <div class="box">
+        <h2>Chi tiết hóa đơn</h2>
+        <div id="cartArea"></div>
+      </div>
+    </div>
+
+    <div class="box" style="margin-top:16px">
+      <h2>Hóa đơn đã tạo</h2>
+      ${table(['Ngày','Mã','Khách','Tổng tiền','Người tạo'], db.sales.slice().reverse().map(s=>`<tr><td>${date(s.at)}</td><td>HD${s.id}</td><td>${esc(s.customer)}</td><td>${money(s.total)}</td><td>${esc(s.by)}</td></tr>`))}
+    </div>`;
+  cartRender();
+}
+
+function addCart(){
+  const itemSelect = $('#saleItem');
+  const customInput = $('#saleCustomName');
+  const qty = Number($('#saleQty').value);
+
+  if (!Number.isInteger(qty) || qty <= 0) return alert('Số lượng phải là số nguyên dương');
+
+  let idVal, name, price, cost = 0, type = saleType || 'product';
+
+  if (customInput && customInput.value.trim() !== '') {
+    name = customInput.value.trim();
+    const customPrice = Number($('#saleCustomPrice').value);
+    if (isNaN(customPrice) || customPrice < 0) return alert('Giá tiền không hợp lệ');
+    price = customPrice;
+    idVal = 'custom_' + Date.now();
+  } else {
+    const itemId = Number(itemSelect.value);
+    const list = type === 'product' ? db.products : db.services;
+    const x = list.find(z => z.id === itemId);
+    if (!x) return alert('Vui lòng chọn mặt hàng');
+    idVal = x.id;
+    name = x.name;
+    price = x.price;
+    cost = x.cost || 0;
+
+    if (type === 'product' && qty > x.stock) {
+      return alert('Không đủ tồn kho cho sản phẩm: ' + name);
+    }
+  }
+
+  const existing = cart.find(z => z.type === type && z.id === idVal);
+  if (existing) {
+    let newQty = qty + existing.qty;
+    if (type === 'product' && !String(idVal).startsWith('custom_')) {
+      const prod = db.products.find(p => p.id === idVal);
+      if (prod && newQty > prod.stock) return alert('Vượt quá số lượng tồn kho');
+    }
+    existing.qty = newQty;
+  } else {
+    cart.push({ type, id: idVal, name, price, cost, qty });
+  }
+
+  if (customInput) customInput.value = '';
+  if ($('#saleCustomPrice')) $('#saleCustomPrice').value = '0';
+
+  cartRender();
+}
+
+function cartRender(){
+  const e=$('#cartArea');if(!e)return;
+  e.innerHTML=cart.map((x,i)=>`<div class="pill line"><div>${esc(x.name)}<div class="muted small">${x.qty} × ${money(x.price)} (${x.type==='product'?'Mỹ phẩm':'Dịch vụ'})</div></div><div><b>${money(x.qty*x.price)}</b> <button class="danger" onclick="cart.splice(${i},1);cartRender()">✕</button></div></div>`).join('')||'<p class="muted">Chưa có sản phẩm hoặc dịch vụ.</p>';
+  e.innerHTML+=`<hr style="border:0;border-top:1px solid #eee"><div class="line"><b>Tổng thanh toán</b><h2>${money(cart.reduce((s,x)=>s+x.price*x.qty,0))}</h2></div><button style="width:100%" ${!cart.length?'disabled':''} onclick="checkout()">Hoàn tất thanh toán</button>`;
+}
+
+function checkout(){
+  if(!cart.length)return;
+  for(const x of cart){
+    if(x.type==='product' && !String(x.id).startsWith('custom_')){
+      const prod = db.products.find(p=>p.id===x.id);
+      if(prod && prod.stock < x.qty) return alert('Không đủ tồn kho: '+x.name);
+    }
+  }
+
+  const customerInput = $('#saleCustomer');
+  const customer = customerInput ? (customerInput.value.trim() || 'Khách lẻ') : 'Khách lẻ';
+
+  if (customer !== 'Khách lẻ' && !db.customers.some(c => c.name.toLowerCase() === customer.toLowerCase())) {
+    db.customers.push({ id: id(), name: customer, phone: '', note: 'Thêm nhanh từ bán hàng' });
+  }
+
+  const items=cart.map(x=>({...x}));
+  for(const x of items){
+    if(x.type==='product' && !String(x.id).startsWith('custom_')){
+      const prod = db.products.find(p=>p.id===x.id);
+      if(prod){
+        prod.stock -= x.qty;
+        db.stockMoves.push({id:id(),at:today(),product:x.name,type:'sale',qty:-x.qty,by:user.name});
+      }
+    }
+  }
+
+  const sale={id:id(),at:today(),customer,items,total:items.reduce((s,x)=>s+x.price*x.qty,0),cost:items.reduce((s,x)=>s+x.cost*x.qty,0),by:user.name};
+  db.sales.push(sale);
+  save();
+  cart=[];
+  alert('Đã tạo hóa đơn HD'+sale.id+' • '+money(sale.total));
+  render();
+}
+
+function stock(){
+  $('#content').innerHTML=`<div class="box"><div class="toolbar"><h2>Nhập / điều chỉnh tồn</h2>${['owner','manager'].includes(user.role)?'<button onclick="stockModal()">+ Tạo phiếu kho</button>':'<span class="muted">Chỉ quản lý được lập phiếu kho</span>'}</div>${table(['Ngày','Sản phẩm','Loại','Số lượng','Người tạo'],db.stockMoves.slice().reverse().map(x=>`<tr><td>${date(x.at)}</td><td>${esc(x.product)}</td><td>${x.type==='in'?'Nhập kho':x.type==='sale'?'Bán hàng':'Điều chỉnh'}</td><td class="${x.qty<0?'bad':'good'}">${x.qty>0?'+':''}${x.qty}</td><td>${esc(x.by)}</td></tr>`))}</div>`
+}
+function stockModal(){
+  if(!['owner','manager'].includes(user.role))return;
+  modal('Tạo phiếu nhập / xuất kho',`<div class="field"><label>Sản phẩm</label><select name="product">${db.products.map(x=>`<option value="${x.id}">${esc(x.name)} (tồn ${x.stock})</option>`).join('')}</select></div><div class="field"><label>Loại phiếu</label><select name="type"><option value="in">Nhập kho</option><option value="out">Xuất điều chỉnh</option></select></div>${f('Số lượng','qty',1,'number','min="1" step="1"')}`);
+  submitModal(t=>{
+    const p=db.products.find(x=>x.id===num(t,'product')),q=num(t,'qty'),type=val(t,'type');
+    if(!p||!Number.isInteger(q)||q<=0)throw Error('Số lượng không hợp lệ');
+    if(type==='out'&&p.stock<q)throw Error('Không đủ tồn kho');
+    const delta=type==='in'?q:-q;p.stock+=delta;
+    db.stockMoves.push({id:id(),at:today(),product:p.name,type,qty:delta,by:user.name});
+  });
+}
+
+function finance(){
+  $('#content').innerHTML=`<div class="box"><div class="toolbar"><h2>Sổ thu chi</h2><button onclick="expenseModal()">+ Ghi khoản thu / chi</button></div>${table(['Ngày','Loại','Nội dung','Số tiền','Người tạo'],db.expenses.slice().reverse().map(x=>`<tr><td>${date(x.at)}</td><td>${x.type==='expense'?'Chi':'Thu khác'}</td><td>${esc(x.note)}</td><td class="${x.type==='expense'?'bad':'good'}">${money(x.amount)}</td><td>${esc(x.by)}</td></tr>`))}</div>`
+}
+function expenseModal(){
+  modal('Ghi thu / chi',`<div class="field"><label>Loại</label><select name="type"><option value="expense">Chi phí</option><option value="income">Thu khác</option></select></div>${f('Nội dung','note','')}${f('Số tiền (đ)','amount',0,'number','min="1"')}`);
+  submitModal(t=>{
+    const amount=num(t,'amount');if(amount<=0)throw Error('Số tiền phải lớn hơn 0');
+    db.expenses.push({id:id(),at:today(),type:val(t,'type'),note:val(t,'note'),amount,by:user.name});
+  });
+}
+
+function reports(){
+  const a=summary();
+  $('#content').innerHTML=`<div class="grid"><div class="card">Doanh thu hóa đơn<b>${money(a.revenue)}</b></div><div class="card">Giá vốn đã bán / thực hiện<b>${money(a.cogs)}</b></div><div class="card">Chi phí vận hành<b>${money(a.exp)}</b></div><div class="card">Lãi ước tính<b>${money(a.profit)}</b></div></div><div class="box" style="margin-top:16px"><div class="toolbar"><h2>Xuất dữ liệu</h2><button onclick="exportCSV()">Xuất hóa đơn CSV</button></div></div>`
+}
+function csvCell(v){return '"'+String(v??'').replace(/^[=+@\-\t\r]/,'\'$&').replace(/"/g,'""')+'"'}
+function download(name,content,type){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([content],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function exportCSV(){const rows=[['Mã','Ngày','Khách','Doanh thu','Giá vốn','Người tạo'],...db.sales.map(x=>['HD'+x.id,x.at,x.customer,x.total,x.cost,x.by])];download('hoa_don_spa.csv','\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8')}
+
+function users(){
+  if(user.role!=='owner')return;
+  $('#content').innerHTML=`<div class="box"><div class="toolbar"><h2>Tài khoản nhân viên</h2><button onclick="userModal()">+ Tạo tài khoản</button></div>${table(['Tên','Tài khoản','Vai trò','Trạng thái','Thao tác'],db.users.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.username)}</td><td>${roleName[x.role]}</td><td>${x.active?'Đang hoạt động':'Đã khóa'}</td><td><button class="secondary" onclick="userModal(${x.id})">Sửa</button></td></tr>`))}</div><div class="box" style="margin-top:16px"><h2>Phân quyền theo vai trò</h2>${['manager','staff','cashier'].map(role=>`<h3>${roleName[role]}</h3><div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px">${Object.entries(menuItems).filter(([k])=>!['users','backup'].includes(k)).map(([k,item])=>`<label class="pill"><input style="width:auto" type="checkbox" ${db.permissions[role]?.includes(k)?'checked':''} onchange="permission('${role}','${k}',this.checked)"> ${item.label}</label>`).join('')}</div>`).join('')}</div>`
+}
+function permission(role,k,checked){const set=new Set(db.permissions[role]||[]);checked?set.add(k):set.delete(k);db.permissions[role]=[...set];save()}
+function userModal(i){
+  const x=db.users.find(z=>z.id===i)||{name:'',username:'',password:'123456',role:'staff',active:true};
+  modal(i?'Sửa tài khoản':'Thêm tài khoản',`${f('Họ tên','name',x.name)}${f('Tên đăng nhập','username',x.username)}${f('Mật khẩu','password',x.password)}<div class="field"><label>Vai trò</label><select name="role">${Object.entries(roleName).map(([k,v])=>`<option value="${k}" ${x.role===k?'selected':''}>${v}</option>`).join('')}</select></div><div class="field"><label>Trạng thái</label><select name="active"><option value="1" ${x.active?'selected':''}>Hoạt động</option><option value="0" ${!x.active?'selected':''}>Khóa</option></select></div>`);
+  submitModal(t=>{
+    const v={name:val(t,'name'),username:val(t,'username'),password:val(t,'password'),role:val(t,'role'),active:val(t,'active')==='1'};
+    if(db.users.some(z=>z.username===v.username&&z.id!==i))throw Error('Tên đăng nhập đã tồn tại');
+    if(i===user.id&&(!v.active||v.role!=='owner'))throw Error('Không thể tự khóa hoặc bỏ quyền chủ Spa');
+    if(i)Object.assign(x,v);else db.users.push({id:id(),...v});
+  });
+}
+
+function backup(){
+  $('#content').innerHTML=`<div class="box"><h2>Sao lưu / khôi phục</h2><div class="actions"><button onclick="backupNow()">Tải file sao lưu JSON</button><label class="pill">Khôi phục JSON <input type="file" accept=".json,application/json" onchange="restore(event)" style="max-width:230px"></label></div></div>`
+}
+function backupNow(){download('ly_md_beauty_backup_'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(db,null,2),'application/json')}
+function restore(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      if(!Array.isArray(data.products)||!Array.isArray(data.sales))throw Error('File không đúng cấu trúc');
+      if(!confirm('Ghi đè toàn bộ dữ liệu hiện tại bằng bản sao lưu?'))return;
+      db=Object.assign(emptyDb(),data);save();render();alert('Khôi phục thành công.');
+    }catch(err){alert('Không thể khôi phục: '+err.message)}
+  };
+  r.readAsText(file);
+}
+function resetDemo(){if(!confirm('Xóa toàn bộ dữ liệu hiện tại và trở về dữ liệu mẫu?'))return;db=initial();save();logout()}
+
+// Cấu hình Lịch hẹn
+const calStyle=document.createElement('style');
+calStyle.textContent=`.calhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}.calgrid{display:grid;grid-template-columns:95px repeat(6,minmax(130px,1fr));gap:5px;min-width:960px}.calcell{background:#fff;border:1px solid #eadfd5;border-radius:9px;padding:8px;min-height:125px}.calcell.cal-full{background:#fff1f1;border-color:#e88}.calcell.drop{outline:3px solid #b88c5c}.calday{background:#f4ece3;min-height:auto;font-weight:bold;text-align:center}.calshift{background:#f9f2eb;font-weight:700}.appointment{padding:7px;margin:5px 0;border-radius:8px;background:#f1e7fa;border-left:4px solid #9273b6;font-size:12px;cursor:grab}.appointment.done{background:#e4f4e9;border-color:#3b9560}.appointment.cancel{opacity:.5}.calwrap{overflow-x:auto}.calform{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px}.calform label{font-size:13px}.calform input,.calform select{width:100%;margin-top:5px}.calbadge{color:#b32828;font-weight:700}.calcell button{padding:4px 8px;font-size:12px}`;
+document.head.appendChild(calStyle);
+
+if(!Array.isArray(db.appointments))db.appointments=[];
+if(!db.calendarConfig)db.calendarConfig={morning:'08:00',afternoon:'13:00',max:4};
+let weekOffset=0,editAppointment=null;
+
+function isoLocal(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+function monday(offset=0){let d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7)+offset*7);return d}
+function calDate(d,n){let x=new Date(d);x.setDate(x.getDate()+n);return isoLocal(x)}
+function calCount(date,shift,ignore){return db.appointments.filter(a=>a.date===date&&a.shift===shift&&a.status!=='cancel'&&a.id!==ignore).length}
+function calConflict(a,ignore){
+  if(new Date(a.date+'T12:00:00').getDay()===0)return 'Chủ nhật nghỉ, không nhận lịch.';
+  if(calCount(a.date,a.shift,ignore)>=Number(db.calendarConfig.max))return 'Ca này đã FULL. Hãy chọn ngày hoặc ca khác.';
+  if(db.appointments.some(x=>x.id!==ignore&&x.status!=='cancel'&&x.date===a.date&&x.shift===a.shift&&Number(x.customerId)===Number(a.customerId)))return 'Khách đã có lịch trong ca này.';
+  if(a.staff&&db.appointments.some(x=>x.id!==ignore&&x.status!=='cancel'&&x.date===a.date&&x.shift===a.shift&&x.staff===a.staff))return 'Nhân viên này đã có lịch trong ca này.';
+  return '';
+}
+
+function calendarPage(){
+  let mon=monday(weekOffset),end=calDate(mon,5),max=Number(db.calendarConfig.max);
+  $('#content').innerHTML=`<div class="box"><div class="calhead"><div><h2>📅 Lịch làm việc • ${calDate(mon,0)} → ${end}</h2><p class="muted">Thứ 2–Thứ 7 • Chủ nhật nghỉ • Kéo thả thẻ lịch để đổi ngày/ca</p></div><div><button class="secondary" onclick="weekOffset--;calendarPage()">← Tuần trước</button> <button class="secondary" onclick="weekOffset=0;calendarPage()">Tuần này</button> <button class="secondary" onclick="weekOffset++;calendarPage()">Tuần sau →</button></div></div><div class="calwrap"><div class="calgrid"><div class="calcell calday">Ca / Ngày</div>${Array.from({length:6},(_,i)=>`<div class="calcell calday">${['Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][i]}<br>${calDate(mon,i)}</div>`).join('')}${['morning','afternoon'].map(sh=>`<div class="calcell calshift">${sh==='morning'?'☀️ Sáng':'🌤️ Chiều'}<br><small>${db.calendarConfig[sh]}</small></div>${Array.from({length:6},(_,i)=>{let dt=calDate(mon,i),items=db.appointments.filter(a=>a.date===dt&&a.shift===sh&&a.status!=='cancel'),full=items.length>=max;return `<div class="calcell ${full?'cal-full':''}" ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="calDrop(event,'${dt}','${sh}')"><div class="muted small">${items.length}/${max} ${full?'<span class="calbadge">FULL</span>':''}</div>${items.map(a=>{let c=db.customers.find(x=>x.id===Number(a.customerId)),sv=db.services.find(x=>x.id===Number(a.serviceId));return `<div class="appointment ${a.status==='done'?'done':''}" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${a.id}')" onclick="calEdit(${a.id})"><b>${esc(c?.name||'Khách đã xóa')}</b><br>${esc(sv?.name||'Dịch vụ')}<br>Buổi ${a.session}/${a.total} · ${esc(a.staff||'Chưa phân công')}${a.status==='done'?' ✓':''}</div>`}).join('')}</div>`}).join('')}`).join('')}</div></div></div><div class="box" id="calEditor"></div><div class="box"><h2>⚙️ Cấu hình lịch</h2><div class="calform"><label>Giờ ca sáng<input type="time" id="calMorning" value="${db.calendarConfig.morning}"></label><label>Giờ ca chiều<input type="time" id="calAfternoon" value="${db.calendarConfig.afternoon}"></label><label>Số khách tối đa / ca<input type="number" id="calMax" min="1" max="100" value="${max}"></label></div><p><button class="secondary" onclick="calSaveConfig()">Lưu cấu hình</button></p></div>`;
+  calNew(calDate(mon,0),'morning');
+}
+
+function calNew(date,shift){editAppointment=null;calForm({date,shift,session:1,total:4,status:'booked'})}
+function calEdit(id){let a=db.appointments.find(x=>x.id===id);if(!a)return;editAppointment=id;calForm(a)}
+function calForm(a){
+  let el=$('#calEditor');if(!el)return;
+  el.innerHTML=`<h2>${editAppointment?'Sửa lịch hẹn':'Đặt lịch / Tạo buổi liệu trình'}</h2><div class="calform"><label>Khách hàng<input id="calCustomer" list="calCustomerList" placeholder="Chọn hoặc nhập tên khách" value="${esc(db.customers.find(c=>c.id===Number(a.customerId))?.name||a.customerName||'')}"><datalist id="calCustomerList">${db.customers.map(c=>`<option value="${esc(c.name)}">${esc(c.phone||'')}</option>`).join('')}</datalist></label><label>Dịch vụ<select id="calService">${db.services.map(s=>`<option value="${s.id}" ${Number(a.serviceId)===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label><label>Ngày hẹn<input id="calWhen" type="date" value="${a.date}"></label><label>Ca<select id="calShift"><option value="morning" ${a.shift==='morning'?'selected':''}>Sáng</option><option value="afternoon" ${a.shift==='afternoon'?'selected':''}>Chiều</option></select></label><label>Người phụ trách<select id="calStaff"><option value="">Chưa phân công</option>${['BS Ly','BS Huy'].map(n=>`<option value="${n}" ${a.staff===n?'selected':''}>${n}</option>`).join('')}</select></label><label>Buổi số<input id="calSession" type="number" min="1" value="${a.session||1}"></label><label>Tổng số buổi<input id="calTotal" type="number" min="1" value="${a.total||4}"></label><label>Trạng thái<select id="calStatus"><option value="booked" ${a.status==='booked'?'selected':''}>Đã đặt</option><option value="done" ${a.status==='done'?'selected':''}>Hoàn thành</option><option value="cancel" ${a.status==='cancel'?'selected':''}>Hủy</option></select></label><label>Ghi chú<input id="calNote" value="${esc(a.note||'')}"></label></div><p><button onclick="calSave()">${editAppointment?'Lưu thay đổi':'Lưu lịch hẹn'}</button> ${editAppointment?'<button class="danger" onclick="calRemove()">Xóa lịch</button>':''} <button class="secondary" onclick="calPlan()">Tạo nhiều buổi tự động</button></p>`;
+}
+
+function calResolveCustomer(create){
+  let name=$('#calCustomer').value.trim();if(!name)return 0;
+  let found=db.customers.find(c=>c.name.toLocaleLowerCase('vi')===name.toLocaleLowerCase('vi'));
+  if(found)return found.id;
+  if(!create)return -1;
+  let customer={id:id(),name,phone:'',note:'Được thêm từ lịch hẹn'};
+  db.customers.push(customer);return customer.id;
+}
+function calPrepareCustomer(a){if(a.customerId===-1){a.customerId=calResolveCustomer(true)}return a}
+function calValues(){return {customerId:calResolveCustomer(false),serviceId:Number($('#calService').value),date:$('#calWhen').value,shift:$('#calShift').value,staff:$('#calStaff').value,session:Number($('#calSession').value),total:Number($('#calTotal').value),status:$('#calStatus').value,note:$('#calNote').value}}
+
+function calSave(){
+  let a=calValues();if(!a.customerId||!a.serviceId||!a.date||a.session<1||a.total<a.session)return alert('Kiểm tra khách hàng, dịch vụ và số buổi.');
+  calPrepareCustomer(a);
+  let err=a.status==='cancel'?'':calConflict(a,editAppointment);
+  if(err)return alert('⚠️ '+err);
+  if(editAppointment){Object.assign(db.appointments.find(x=>x.id===editAppointment),a)}else db.appointments.push({...a,id:id()});
+  save();calendarPage();
+}
+function calRemove(){if(!confirm('Xóa lịch hẹn này?'))return;db.appointments=db.appointments.filter(a=>a.id!==editAppointment);save();calendarPage()}
+function calDrop(e,date,shift){
+  e.preventDefault();let id=Number(e.dataTransfer.getData('text/plain')),a=db.appointments.find(x=>x.id===id);if(!a)return;
+  let next={...a,date,shift},err=calConflict(next,id);if(err)return alert('⚠️ '+err);
+  a.date=date;a.shift=shift;save();calendarPage();
+}
+function calSaveConfig(){
+  let max=Number($('#calMax').value);if(max<1||max>100)return alert('Sức chứa phải từ 1–100');
+  db.calendarConfig={morning:$('#calMorning').value,afternoon:$('#calAfternoon').value,max};save();calendarPage();
+}
+function calPlan(){
+  let a=calValues();if(!a.customerId||!a.serviceId||!a.date||a.total<a.session)return alert('Kiểm tra dữ liệu liệu trình');
+  let gap=Number(prompt('Số ngày nghỉ giữa 2 buổi (1 = thứ 2 → thứ 4; 2 = thứ 2 → thứ 5):','1'));
+  if(!Number.isInteger(gap)||gap<1||gap>365)return;
+  calPrepareCustomer(a);let created=0,skipped=[];
+  let d=new Date(a.date+'T12:00:00');if(d.getDay()===0)d.setDate(d.getDate()+1);
+  for(let n=a.session;n<=a.total;n++){
+    if(n>a.session){d.setDate(d.getDate()+gap+1);if(d.getDay()===0)d.setDate(d.getDate()+1)}
+    let item={...a,date:isoLocal(d),session:n,status:'booked'};
+    let err=calConflict(item,null);
+    if(err){skipped.push(`Buổi ${n} (${item.date}): ${err}`);continue}
+    db.appointments.push({...item,id:id()});created++;
+  }
+  save();calendarPage();alert(`Đã tạo ${created} buổi.`);
+}
+
+(async()=>{
+  const box=t=>`<div class="login"><div class="loginbox">${t}</div></div>`;
+  if(!window.supabase||SUPABASE_URL.startsWith('DÁN')){$('#app').innerHTML=box('<h2>Chưa cấu hình</h2><p class="hint">Mở file bằng Notepad, dán Project URL và anon key của Supabase vào 2 dòng đầu của thẻ script.</p>');return}
+  $('#app').innerHTML=box('Đang tải…');
+  sb=supabase.createClient(SUPABASE_URL.trim().replace(/(https?:\/\/[^\/]+).*/,'$1'),SUPABASE_KEY.trim());
+  const {data}=await sb.auth.getSession();
+  if(data.session)await enter(data.session.user);else render();
+})();
+</script>
+</body>
+</html>
