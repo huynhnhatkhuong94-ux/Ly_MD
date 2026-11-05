@@ -81,97 +81,6 @@ td button{padding:7px 10px;margin:2px}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
-  // 1. Kiểm tra quyền của user hiện tại khi vừa vào trang
-async function checkUserAccessAndInit() {
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  
-  if (authError || !user) {
-    // Chưa đăng nhập -> Chuyển về trang đăng nhập
-    window.location.href = 'login.html'; 
-    return;
-  }
-
-  // Lấy thông tin role từ bảng profiles
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('role, full_name')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError || !profile) {
-    console.error('Không tìm thấy thông tin profile');
-    return;
-  }
-
-  // Phân quyền hiển thị UI
-  if (profile.role === 'admin') {
-    // Hiển thị các khu vực dành riêng cho Admin
-    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
-    loadAllUsersForAdmin(); // Tải danh sách nhân sự để quản lý
-  } else {
-    // Ẩn khu vực Admin với nhân viên thông thường
-    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-  }
-}
-
-// 2. Tải danh sách user cho Admin quản lý
-async function loadAllUsersForAdmin() {
-  const { data: profiles, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    alert('Lỗi tải danh sách người dùng: ' + error.message);
-    return;
-  }
-
-  const tbody = document.getElementById('users-list-body');
-  tbody.innerHTML = '';
-
-  profiles.forEach(p => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${p.email || 'Chưa cập nhật'}</td>
-      <td>${p.full_name || 'N/A'}</td>
-      <td>
-        <select id="role-${p.id}" onchange="updateUserRole('${p.id}')">
-          <option value="staff" ${p.role === 'staff' ? 'selected' : ''}>Nhân viên (Staff)</option>
-          <option value="manager" ${p.role === 'manager' ? 'selected' : ''}>Quản lý (Manager)</option>
-          <option value="admin" ${p.role === 'admin' ? 'selected' : ''}>Quản trị viên (Admin)</option>
-        </select>
-      </td>
-      <td><span id="status-${p.id}" style="color: green; font-size: 12px;"></span></td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// 3. Hàm cập nhật vai trò khi Admin đổi giá trị trong thẻ <select>
-async function updateUserRole(userId) {
-  const selectedRole = document.getElementById(`role-${userId}`).value;
-  const statusSpan = document.getElementById(`status-${userId}`);
-
-  const { error } = await supabase
-    .from('profiles')
-    .update({ role: selectedRole })
-    .eq('id', userId);
-
-  if (error) {
-    statusSpan.style.color = 'red';
-    statusSpan.textContent = 'Lỗi cập nhật!';
-    console.error(error);
-  } else {
-    statusSpan.style.color = 'green';
-    statusSpan.textContent = 'Đã lưu!';
-    setTimeout(() => { statusSpan.textContent = ''; }, 2000);
-  }
-}
-
-// Gọi hàm kiểm tra ngay khi trang web tải xong
-window.addEventListener('DOMContentLoaded', () => {
-  checkUserAccessAndInit();
-});
 'use strict';
 // ===== DÁN THÔNG TIN SUPABASE VÀO 2 DÒNG DƯỚI (Project Settings > API) =====
 const SUPABASE_URL='https://majsjonjelplqfqguuiw.supabase.co', SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1hanNqb25qZWxwbHFmcWd1dWl3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNzAxNjQsImV4cCI6MjEwODg0NjE2NH0.bW6ojSumbFBDnKJ8MGMTWlqhFFTm6rIOaymXnXlQJ50';
@@ -350,23 +259,18 @@ function render(){
       </aside>
       <main class="main">
         <div class="top">
-          <!-- Khu vực trang quản trị phân quyền (Chỉ hiện với Admin) -->
-<div id="admin-panel" class="admin-only" style="display: none; padding: 20px;">
-  <h2>Quản lý phân quyền nhân sự</h2>
-  <table id="users-table" border="1" cellpadding="10" cellspacing="0" style="width: 100%; margin-top: 15px;">
-    <thead>
-      <tr>
-        <th>Email</th>
-        <th>Họ tên</th>
-        <th>Vai trò hiện tại</th>
-        <th>Thao tác</th>
-      </tr>
-    </thead>
-    <tbody id="users-list-body">
-      <!-- Dữ liệu sẽ được load tự động bằng JavaScript -->
-    </tbody>
-  </table>
-</div>
+          <div>
+            <h1>${esc(currentMenu.label)}</h1>
+            <div class="muted small">Hệ thống quản lý Spa • Đồng bộ trực tuyến</div>
+          </div>
+          <div>
+            <span class="tag">${esc(user.name)} · ${roleName[user.role]}</span> 
+            <button class="secondary" onclick="logout()">Đăng xuất</button>
+          </div>
+        </div>
+        <section id="content"></section>
+      </main>
+    </div>`;
 
   const pageRouter = {
     dashboard: dashboard,
